@@ -1,15 +1,21 @@
-FROM schoolofdevops/maven:spring
+FROM schoolofdevops/maven:spring AS build
 
 WORKDIR /app
 
 COPY . .
 
-RUN mvn spring-javaformat:apply && \
-mvn package -DskipTests && \
-mv target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar /run/petclinic.jar
+RUN mvn package -Dskiptests
+ 
+FROM build AS test
+
+CMD mvn clean test
+
+FROM eclipse-temurin:17-jre-alpine AS run 
+
+WORKDIR /app
+
+COPY --from=build /app/target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar petclinic.jar
 
 EXPOSE 8080
 
-WORKDIR /run
-
-CMD java -jar petclinic.jar
+CMD ["java", "-jar", "petclinic.jar"]
